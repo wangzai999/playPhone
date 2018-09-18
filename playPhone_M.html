@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>打飞机游戏</title>
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="playPhone.css">
+    <link rel="stylesheet" href="animate.css">
+</head>
+
+<body>
+    <div id="box">
+        <div id="box_start">
+            <div id="loading">
+                <h3>0%</h3>
+            </div>
+            <span id="start_open" class="animated tada infinite"></span>
+        </div>
+        <div id="game">
+            <audio src="" autoplay></audio>
+            <audio src="" autoplay></audio>
+            <audio src="" autoplay></audio>
+            <audio src="" autoplay></audio>
+            <canvas id="mycanvas" width="350" height="500"></canvas>
+            <span id="grade">0</span>
+        </div>
+        <div id="again">
+            <span id="gradeshow">00</span>
+            <span id="gameagain" class="animated pulse infinite">再来一次</span>
+        </div>
+    </div>
+
+    <script>
+        var canvas = document.querySelector('#mycanvas');
+        //获取并设置屏幕的宽高
+        var windowWid = document.body.clientWidth;
+        var windowHit = document.documentElement.clientHeight;
+        document.body.style.width = windowWid + "px";
+        document.body.style.height = windowHit + "px";
+        canvas.width = windowWid;
+        canvas.height = windowHit;
+
+        //获取相关的节点
+        var h3 = document.querySelector("h3");
+        var start_open = document.querySelector("#start_open");
+        var loadings = document.querySelector("#loading");
+        var boxstart = document.querySelector("#box_start");
+        var game = document.querySelector("#game");
+        var again = document.querySelector("#again");
+        var gameagain = document.querySelector("#gameagain");
+        var gradeshow = document.querySelector("#gradeshow");
+        var audio = document.querySelectorAll("audio");
+        var gra = document.querySelector("#grade");
+        var ctx = canvas.getContext("2d");
+
+        //图片加载
+        loading({
+            img: {
+                0: "images/start_button.jpg",
+                1: "images/loading.jpg",
+                2: "images/loading1.gif",
+                3: "images/background.png",
+                4: "images/bomb.png",
+                5: "images/bullet1.png",
+                6: "images/bullet2.png",
+                7: "images/enemy1.png",
+                8: "images/enemy2.png",
+                9: "images/enemy3.png",
+                10: "images/herofly.png",
+                11: "images/start_bg.jpg"
+            }
+        })
+
+        function loading(obj) {
+            var len = 0;
+            for (var i in obj.img) {
+                len++;
+            }
+            var len1 = 0;
+            for (var j in obj.img) {
+                var newObj = new Image();
+                newObj.src = obj.img[j];
+                newObj.onload = function() {
+                    len1++;
+                    h3.innerHTML = (len1 / len).toFixed(2) * 100 + "%";
+                    if (len1 == len) {
+                        start_open.style.display = "block";
+                        loadings.style.display = "none";
+                    }
+                }
+
+            }
+
+        }
+
+        function loading(obj) {
+            var len = 0;
+            for (var i in obj.img) {
+                len++;
+            }
+            var len1 = 0;
+            for (var j in obj.img) {
+                var newObj = new Image();
+                newObj.src = obj.img[j];
+                newObj.onload = function() {
+                    len1++;
+                    h3.innerHTML = (len1 / len).toFixed(2) * 100 + "%";
+                    if (len1 == len) {
+                        start_open.style.display = "block";
+                        loadings.style.display = "none";
+                    }
+                }
+
+            }
+
+        }
+
+        //点击开始按钮开始游戏
+        start_open.addEventListener("touchstart", function() {
+                boxstart.style.display = "none";
+                game.style.display = "block";
+                draw();
+            }, true)
+            //点击重新玩按钮重新游戏
+        gameagain.addEventListener("touchstart", function() {
+            location.reload();
+        }, true)
+
+        // 设置本机的初始位置
+        var myX = windowWid / 2 - 33;
+        var myY = windowHit - 100;
+        var p = 0;
+
+        var bol = true
+        var grade = 0;
+
+        //创建背景对象
+        var backgroundImg = new Image();
+        backgroundImg.src = "images/background1.jpg";
+        var background = {
+            img: backgroundImg,
+            T: 0,
+        }
+
+        //创建本机对象
+        var myselfImg = new Image();
+        myselfImg.src = 'images/herofly.png';
+        var myself = {
+            w: 66,
+            h: 82,
+            allW: 330,
+            number: 0,
+            hit: 0,
+            g: 5,
+        }
+
+        //创建子弹数组
+        var bulletImg = [];
+        var bullet = [];
+
+        //创建敌机数组
+        var enemyflyImg = [];
+        enemyflyImg[0] = new Image();
+        enemyflyImg[0].src = "images/enemy1.png";
+        var enemyfly = [{
+            L: 180,
+            T: -20,
+            w: 38,
+            h: 34,
+            number: 0,
+            hit: 0,
+            g: 5,
+            z: 1,
+            speed: 3
+        }]
+
+        //创建食物数组
+        var foodImg = [];
+        foodImg[0] = new Image();
+        foodImg[0].src = 'images/prop.png';
+        var food = [];
+
+        //绘制函数
+        function draw() {
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            //绘制背景
+            ctx.drawImage(background.img, 0, background.T, windowWid, windowHit);
+            ctx.drawImage(background.img, 0, -windowHit + background.T, windowWid, windowHit);
+            //绘制本机
+            ctx.drawImage(myselfImg, myself.w * myself.number, 0, myself.w, myself.h, myX, myY, myself.w, myself.h);
+
+
+            //绘制子弹
+            for (var i = 0; i < bulletImg.length; i++) {
+                ctx.drawImage(bulletImg[i], 0, 0, bullet[i].w, bullet[i].h, bullet[i].L, bullet[i].T, bullet[i].w, bullet[i].h);
+            }
+
+            //绘制敌机
+            for (var j = 0; j < enemyflyImg.length; j++) {
+                ctx.drawImage(enemyflyImg[j], enemyfly[j].w * enemyfly[j].number, 0, enemyfly[j].w, enemyfly[j].h, enemyfly[j].L, enemyfly[j].T, enemyfly[j].w, enemyfly[j].h);
+            }
+
+            //绘制食物
+            for (var i = 0; i < food.length; i++) {
+                ctx.drawImage(foodImg[i], food[i].number * food[i].w, 0, food[i].w, food[i].h, food[i].L, food[i].T, food[i].w, food[i].h);
+            }
+
+            //敌机死亡效果
+            for (var i = 0; i < enemyfly.length; i++) {
+                if (enemyfly[i].z == 1) {
+                    if (enemyfly[i].hit >= 3) {
+                        if (enemyfly[i].number >= enemyfly[i].g) {
+                            audio[1].src = "mp3/enemy1_down.mp3";
+                            grade += 2;
+                            gra.innerHTML = grade;
+                            enemyfly.splice(i, 1);
+                            enemyflyImg.splice(i, 1);
+                            i--;
+                            continue;
+                        } else {
+                            ctx.drawImage(enemyflyImg[i], enemyfly[i].w * enemyfly[i].number, enemyfly[i].T, enemyfly[i].w, enemyfly[i].h, enemyfly[i].L, enemyfly[i].T, enemyfly[i].w, enemyfly[i].h);
+
+                        }
+                    }
+                } else if (enemyfly[i].z == 2) {
+                    if (enemyfly[i].hit >= 5) {
+                        if (enemyfly[i].number >= enemyfly[i].g) {
+                            audio[1].src = "mp3/enemy3_down.mp3";
+                            grade += 5;
+                            gra.innerHTML = grade;
+                            enemyfly.splice(i, 1);
+                            enemyflyImg.splice(i, 1);
+                            i--;
+                            continue;
+                        } else {
+                            ctx.drawImage(enemyflyImg[i], enemyfly[i].w * enemyfly[i].number, enemyfly[i].T, enemyfly[i].w, enemyfly[i].h, enemyfly[i].L, enemyfly[i].T, enemyfly[i].w, enemyfly[i].h);
+
+                        }
+                    }
+                } else if (enemyfly[i].z == 3) {
+                    if (enemyfly[i].hit >= 10) {
+                        if (enemyfly[i].number >= enemyfly[i].g) {
+                            audio[1].src = "mp3/enemy2_down.mp3";
+                            grade += 10;
+                            gra.innerHTML = grade;
+                            enemyfly.splice(i, 1);
+                            enemyflyImg.splice(i, 1);
+                            i--;
+                            continue;
+                        } else {
+                            ctx.drawImage(enemyflyImg[i], enemyfly[i].w * enemyfly[i].number, enemyfly[i].T, enemyfly[i].w, enemyfly[i].h, enemyfly[i].L, enemyfly[i].T, enemyfly[i].w, enemyfly[i].h);
+
+                        }
+                    }
+                }
+
+            }
+
+        }
+
+        //手指点击移动本机
+        canvas.addEventListener("touchstart", function(e) {
+
+            p++;
+            e.preventDefault();
+            var thoch = e.changedTouches[0];
+            var firstW = thoch.clientX - myX;
+            var firstH = thoch.clientY - myY;
+            if (p == 1) {
+                moveT();
+            }
+            canvas.addEventListener("touchmove", touchMove, true)
+
+            function touchMove(e) {
+                e.preventDefault();
+                var thoch = e.changedTouches[0];
+                myX = thoch.clientX - firstW;
+                myY = thoch.clientY - firstH;
+                draw();
+
+            }
+            document.onmouseup = function() {
+                canvas.removeEventListener("touchmove", touchMove, true);
+            }
+        }, true)
+
+        //飞机释放子弹
+        var bulletshow = 0;
+        var bulletSpend = 0;
+        var bullethurt = 1;
+
+        function shoot() {
+            var newBulletImg = new Image;
+            if (bulletshow == 0) {
+                newBulletImg.src = "images/bullet1.png";
+                var newBullet = {
+                    L: 180,
+                    T: 376,
+                    w: 6,
+                    h: 14,
+                };
+                newBullet.L = myX + 30;
+                newBullet.T = myY - 14;
+            } else {
+                newBulletImg.src = "images/bullet2.png";
+                var newBullet = {
+                    L: 180,
+                    T: 376,
+                    w: 48,
+                    h: 14,
+                };
+                newBullet.L = myX + 10;
+                newBullet.T = myY - 14;
+            }
+
+            bulletImg.push(newBulletImg);
+            bullet.push(newBullet);
+        }
+
+
+        //所有的移动
+        var moveTT;
+        var frame = 0;
+
+        function moveT() {
+            //背景移动
+            frame++;
+            if (frame == 100000) {
+                frame = 0;
+            }
+            background.T += 1;
+            if (background.T >= windowHit) {
+                background.T = 0;
+            }
+
+            //本机的图片切换
+            if (frame % 10 == 0) {
+                myself.number = myself.number == 0 ? 1 : 0;
+            }
+
+            //生成子弹
+            if (frame % (15 - bulletSpend) == 0) {
+                shoot();
+                audio[0].src = "mp3/bullet.mp3";
+            }
+            //子弹向上移动
+            for (var i = 0; i < bullet.length; i++) {
+                bullet[i].T -= 5;
+            }
+
+            //生成敌机
+            if (frame % 30 == 0) {
+                var Ma = Math.random();
+                if (Ma > 0.99) {
+                    audio[2].src = "mp3/enemy2_out.mp3"
+                    createEnemy3();
+                } else if (Ma > 0.75) {
+                    createEnemy2();
+                } else {
+                    createEnemy1();
+                }
+            }
+            //敌机向下移动
+            for (var j = 0; j < enemyfly.length; j++) {
+                enemyfly[j].T += enemyfly[j].speed;
+            }
+
+            //生成食物
+            if (frame % 300 == 0) {
+                if (Math.random() > 0.5) {
+                    createFood();
+                }
+            }
+            //食物向下移动
+            for (var j = 0; j < food.length; j++) {
+                food[j].T += 1;
+            }
+
+            //敌机死亡爆炸
+            for (var i = 0; i < enemyfly.length; i++) {
+                if (enemyfly[i].z == 1) {
+                    if (enemyfly[i].hit >= 3) {
+                        enemyfly[i].number += 1;
+                    }
+                } else if (enemyfly[i].z == 2) {
+                    if (enemyfly[i].hit >= 5) {
+                        enemyfly[i].number += 1;
+                    }
+                } else if (enemyfly[i].z == 3) {
+                    if (enemyfly[i].hit >= 10) {
+                        enemyfly[i].number += 1;
+                    }
+                }
+            }
+
+            crash();
+            draw();
+            if (bol) {
+                moveTT = requestAnimationFrame(moveT);
+            }
+        }
+
+
+        //随即生成敌机一
+        function createEnemy1() {
+            var newenemyflyImg = new Image;
+            newenemyflyImg.src = "images/enemy1.png";
+            var newenemyfly = {
+                L: 180,
+                T: -20,
+                w: 38,
+                h: 34,
+                number: 0,
+                hit: 0,
+                g: 5,
+                z: 1,
+                speed: 3
+            };
+            newenemyfly.L = randomInt(0, 300);
+
+            enemyflyImg.push(newenemyflyImg);
+            enemyfly.push(newenemyfly);
+        }
+        //随机生成敌机二
+        function createEnemy2() {
+            var newenemyflyImg = new Image;
+            newenemyflyImg.src = "images/enemy3.png";
+            var newenemyfly = {
+                L: 180,
+                T: -20,
+                w: 46,
+                h: 64,
+                number: 0,
+                hit: 0,
+                g: 6,
+                z: 2,
+                speed: 2
+            };
+            newenemyfly.L = randomInt(0, 300);
+            enemyflyImg.push(newenemyflyImg);
+            enemyfly.push(newenemyfly);
+        }
+        //随机生成敌机三
+        function createEnemy3() {
+            var newenemyflyImg = new Image;
+            newenemyflyImg.src = "images/enemy2.png";
+            var newenemyfly = {
+                L: 180,
+                T: -200,
+                w: 110,
+                h: 164,
+                number: 0,
+                hit: 0,
+                g: 10,
+                z: 3,
+                speed: 1
+            };
+            newenemyfly.L = randomInt(55, 250);
+            enemyflyImg.push(newenemyflyImg);
+            enemyfly.push(newenemyfly);
+        }
+
+        //
+
+
+        //随机生成食物
+        function createFood() {
+            var newfoodImg = new Image();
+            newfoodImg.src = 'images/prop.png';
+            var newfood = {
+                L: 180,
+                T: -20,
+                w: 39,
+                h: 68,
+                number: 0
+            };
+            newfood.L = randomInt(0, 300);
+            var panduan = Math.random();
+            if (panduan > 0.9) {
+                newfood.number = 2;
+            } else if (panduan > 0.6) {
+                newfood.number = 1;
+            }
+
+            foodImg.push(newfoodImg);
+            food.push(newfood);
+        }
+
+
+        //判断碰撞
+        function crash() {
+
+            //子弹离开屏幕则消失
+            for (var i = 0; i < bullet.length; i++) {
+                if (bullet[i].T <= 0) {
+                    bullet.splice(i, 0);
+                    bulletImg.splice(i, 0);
+                }
+            }
+            //敌机离开屏幕则消失
+            for (var i = 0; i < enemyfly.length; i++) {
+                if (enemyfly[i].T == windowHit) {
+                    enemyfly.splice(i, 1);
+                    enemyflyImg.splice(i, 1);
+                }
+            }
+            //判断敌机与子弹的碰撞
+            for (var i = 0; i < enemyfly.length; i++) {
+                for (var j = 0; j < bullet.length; j++) {
+                    if (bullet[j].T - enemyfly[i].T < enemyfly[i].h && bullet[j].T - enemyfly[i].T > -bullet[j].h) {
+                        if (bullet[j].L - enemyfly[i].L < enemyfly[i].w && bullet[j].L - enemyfly[i].L > -bullet[j].w) {
+                            bullet.splice(j, 1);
+                            bulletImg.splice(j, 1);
+                            enemyfly[i].hit += bullethurt;
+                        }
+
+                    }
+
+                }
+
+            }
+            //判断敌机与本机的碰撞
+            for (var i = 0; i < enemyfly.length; i++) {
+                if (myY - enemyfly[i].T < enemyfly[i].h && myY - enemyfly[i].T > -myself.h) {
+                    if (myX - enemyfly[i].L < enemyfly[i].w && myX - enemyfly[i].L > -myself.w) {
+                        audio[3].src = "mp3/game_over.mp3";
+                        myself.number = 4;
+                        bol = false;
+                        gradeshow.innerHTML = grade;
+                        game.style.display = "none";
+                        again.style.display = "block";
+                    }
+                }
+            }
+            //判断本机吃到食物
+            for (var i = 0; i < food.length; i++) {
+                if (myY - food[i].T < food[i].h && myY - food[i].T > -myself.h) {
+                    if (myX - food[i].L < food[i].w && myX - food[i].L > -myself.w) {
+                        if (food[i].number == 1) {
+                            bulletshow = 1;
+                            bulletSpend++;
+
+                        } else if (food[i].number == 2) {
+                            for (var j = 0; j < enemyfly.length; j++) {
+                                enemyfly[j].hit = 10
+                            }
+                        }
+
+
+                        if (bulletSpend >= 10) {
+                            bulletSpend = 8;
+                        }
+                        if (bulletSpend % 2 == 1) {
+
+                            if (bullethurt < 4) {
+                                bullethurt++;
+                            }
+                        }
+                        food.splice(i, 1);
+                        foodImg.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        //        //死亡后爆炸
+        //        var deathfly=[];
+        //        function death(obj,objImg,i) {
+        //            var newdeathfly = {};
+        //            newdeathfly = obj;
+        //            newdeathfly.img = objImg;
+        //            deathfly.push(newdeathfly);
+        //            console.log(i);
+        //            console.log(deathfly);
+        //        }
+
+        //随机函数
+        function randomInt(max, min) {
+            return parseInt(Math.random() * (max - min + 1) + min);
+        }
+    </script>
+</body>
+
+</html>
